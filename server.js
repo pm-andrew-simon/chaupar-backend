@@ -1,93 +1,95 @@
 // server.js
-// Серверная функция генерации значений кубиков для игры Чаупар
+// Главный файл сервера для игры Чаупар
 
-/**
- * Функция генерации случайных значений кубиков
- * Возвращает объект с двумя значениями от 1 до 6
- * @returns {Object} Объект с полями dice1, dice2, sum
- */
-function generateDiceValues() {
-    // Генерируем два случайных значения от 1 до 6
-    const dice1 = Math.floor(Math.random() * 6) + 1;
-    const dice2 = Math.floor(Math.random() * 6) + 1;
-    const sum = dice1 + dice2;
-    
-    return {
-        dice1: dice1,
-        dice2: dice2,
-        sum: sum
-    };
-}
+// 1. Подключаем библиотеку для создания сервера
+const express = require('express');
+// 2. Подключаем наши функции работы с кубиками
+const { generateDiceValues, isSpecialDouble, rollDiceWithAnimation } = require('./dice');
 
-/**
- * Проверка на специальные дубли (1-1 или 6-6)
- * @param {number} dice1 - Значение первого кубика
- * @param {number} dice2 - Значение второго кубика
- * @returns {boolean} true если выпал специальный дубль
- */
-function isSpecialDouble(dice1, dice2) {
-    return (dice1 === 1 && dice2 === 1) || (dice1 === 6 && dice2 === 6);
-}
+// 3. Создаем Express-приложение (наш сервер)
+const app = express();
+// 4. Разрешаем обработку JSON данных в запросах
+app.use(express.json());
 
-/**
- * Симуляция анимации броска с промежуточными значениями
- * @returns {Promise<Object>} Promise с финальными значениями кубиков
- */
-function rollDiceWithAnimation() {
-    return new Promise((resolve) => {
-        // Симуляция анимации (1.5-2 секунды)
-        const animationDuration = 1500 + Math.random() * 500;
-        
-        // Промежуточные случайные значения во время анимации
-        const animationSteps = 10;
-        const stepDuration = animationDuration / animationSteps;
-        let currentStep = 0;
-        
-        const animationInterval = setInterval(() => {
-            // Промежуточные значения (не используются в финальном результате)
-            const tempValues = generateDiceValues();
-            console.log(`Анимация шаг ${currentStep + 1}: ${tempValues.dice1}, ${tempValues.dice2}`);
-            
-            currentStep++;
-            
-            if (currentStep >= animationSteps) {
-                clearInterval(animationInterval);
-                // Финальные значения
-                const finalValues = generateDiceValues();
-                console.log(`Финальный результат: ${finalValues.dice1} + ${finalValues.dice2} = ${finalValues.sum}`);
-                resolve(finalValues);
-            }
-        }, stepDuration);
-    });
-}
+// 5. Настраиваем CORS - разрешаем запросы с других доменов (с вашего фронтенда)
+app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*'); // Разрешаем всем (*) или укажите конкретный URL фронтенда
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+    next();
+});
 
-// Экспорт функций для использования в Node.js
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = {
-        generateDiceValues,
-        isSpecialDouble,
-        rollDiceWithAnimation
-    };
-}
+// 6. Создаем маршруты (роуты) API
 
-// Пример использования:
-if (require.main === module) {
-    console.log('=== Тест генерации кубиков ===');
-    
-    // Простая генерация
-    console.log('Простой бросок:', generateDiceValues());
-    
-    // Тест на специальные дубли
-    console.log('1-1 специальный дубль:', isSpecialDouble(1, 1));
-    console.log('6-6 специальный дубль:', isSpecialDouble(6, 6));
-    console.log('3-4 обычный бросок:', isSpecialDouble(3, 4));
-    
-    // Тест анимированного броска
-    console.log('\n=== Анимированный бросок ===');
-    rollDiceWithAnimation().then(result => {
-        console.log('Результат анимированного броска:', result);
-        if (isSpecialDouble(result.dice1, result.dice2)) {
-            console.log('🎉 Выпал специальный дубль!');
+// Простой тестовый маршрут - проверка что сервер работает
+app.get('/', (req, res) => {
+    res.json({ 
+        message: '🎯 Сервер игры Чаупар запущен и работает!',
+        endpoints: {
+            simpleRoll: '/api/roll/simple - Простой бросок кубиков',
+            animatedRoll: '/api/roll/animated - Бросок с анимацией',
+            checkDouble: '/api/check-double?dice1=X&dice2=Y - Проверка специального дубля'
         }
     });
-}
+});
+
+// Маршрут для простого броска кубиков
+app.get('/api/roll/simple', (req, res) => {
+    try {
+        const result = generateDiceValues();
+        res.json({
+            success: true,
+            ...result,
+            isSpecialDouble: isSpecialDouble(result.dice1, result.dice2)
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Маршрут для анимированного броска
+app.get('/api/roll/animated', async (req, res) => {
+    try {
+        const result = await rollDiceWithAnimation();
+        res.json({
+            success: true,
+            ...result,
+            isSpecialDouble: isSpecialDouble(result.dice1, result.dice2)
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Маршрут для проверки специального дубля
+app.get('/api/check-double', (req, res) => {
+    try {
+        const dice1 = parseInt(req.query.dice1);
+        const dice2 = parseInt(req.query.dice2);
+        
+        if (isNaN(dice1) || isNaN(dice2) || dice1 < 1 || dice1 > 6 || dice2 < 1 || dice2 > 6) {
+            return res.status(400).json({ 
+                success: false, 
+                error: 'Некорректные значения кубиков. Используйте числа от 1 до 6.' 
+            });
+        }
+        
+        res.json({
+            success: true,
+            dice1,
+            dice2,
+            isSpecialDouble: isSpecialDouble(dice1, dice2)
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// 7. Настраиваем порт (Render сам дает порт через переменную окружения)
+const PORT = process.env.PORT || 3000;
+
+// 8. Запускаем сервер
+app.listen(PORT, () => {
+    console.log(`✅ Сервер Чаупар запущен на порту ${PORT}`);
+    console.log(`📡 Доступно по адресу: http://localhost:${PORT}`);
+    console.log('🎲 Готов принимать запросы на броски кубиков!');
+});
