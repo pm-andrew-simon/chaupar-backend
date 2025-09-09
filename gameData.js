@@ -48,18 +48,18 @@ async function updateGameState(chprId, gameState) {
             };
         }
 
-        // Сначала проверяем, существует ли запись с таким CHPR_ID
+        // Сначала проверяем, существует ли запись с таким CHPR_id
         const { data: existingData, error: findError } = await supabase
             .from('saved_games')
             .select('id')
-            .eq('CHPR_ID', chprId)
+            .eq('CHPR_id', chprId)
             .single();
 
         if (findError) {
             if (findError.code === 'PGRST116') {
                 return {
                     success: false,
-                    message: `Запись с CHPR_ID "${chprId}" не найдена.`,
+                    message: `Запись с CHPR_id "${chprId}" не найдена.`,
                     error: 'RECORD_NOT_FOUND'
                 };
             } else {
@@ -74,7 +74,7 @@ async function updateGameState(chprId, gameState) {
         if (!existingData) {
             return {
                 success: false,
-                message: `Запись с CHPR_ID "${chprId}" не найдена.`,
+                message: `Запись с CHPR_id "${chprId}" не найдена.`,
                 error: 'RECORD_NOT_FOUND'
             };
         }
@@ -83,7 +83,7 @@ async function updateGameState(chprId, gameState) {
         const { data: updatedData, error: updateError } = await supabase
             .from('saved_games')
             .update({ new_game_state: gameState })
-            .eq('CHPR_ID', chprId)
+            .eq('CHPR_id', chprId)
             .select('id')
             .single();
 
