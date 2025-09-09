@@ -11,6 +11,15 @@ const { supabase } = require('./supabase');
  */
 async function updateGameState(chprId, gameState) {
     try {
+        // Проверяем, что Supabase настроен
+        if (!supabase) {
+            return {
+                success: false,
+                message: 'Supabase не настроен. Проверьте переменные окружения.',
+                error: 'SUPABASE_NOT_CONFIGURED'
+            };
+        }
+
         // Валидация входных параметров
         if (!chprId || typeof chprId !== 'string') {
             return {
@@ -39,18 +48,18 @@ async function updateGameState(chprId, gameState) {
             };
         }
 
-        // Сначала проверяем, существует ли запись с таким chpr_id
+        // Сначала проверяем, существует ли запись с таким CHPR_ID
         const { data: existingData, error: findError } = await supabase
             .from('saved_games')
             .select('id')
-            .eq('chpr_id', chprId)
+            .eq('CHPR_ID', chprId)
             .single();
 
         if (findError) {
             if (findError.code === 'PGRST116') {
                 return {
                     success: false,
-                    message: `Запись с chpr_id "${chprId}" не найдена.`,
+                    message: `Запись с CHPR_ID "${chprId}" не найдена.`,
                     error: 'RECORD_NOT_FOUND'
                 };
             } else {
@@ -65,7 +74,7 @@ async function updateGameState(chprId, gameState) {
         if (!existingData) {
             return {
                 success: false,
-                message: `Запись с chpr_id "${chprId}" не найдена.`,
+                message: `Запись с CHPR_ID "${chprId}" не найдена.`,
                 error: 'RECORD_NOT_FOUND'
             };
         }
@@ -74,7 +83,7 @@ async function updateGameState(chprId, gameState) {
         const { data: updatedData, error: updateError } = await supabase
             .from('saved_games')
             .update({ new_game_state: gameState })
-            .eq('chpr_id', chprId)
+            .eq('CHPR_ID', chprId)
             .select('id')
             .single();
 
