@@ -7,7 +7,7 @@ const { supabase } = require('./supabase');
  * Обновляет игровое состояние в таблице saved_games
  * @param {string} chprId - Уникальный идентификатор CHPR_id для поиска записи
  * @param {Object} gameState - JSON объект с состоянием игры
- * @returns {Promise<Object>} Объект с результатом выполнения операции
+ * @returns {Promise<Object>} Объект с результатом: {success, message, updatedId} где updatedId - это CHPR_id игры
  * @description Обновляет поля new_game_state и updated_at в таблице saved_games
  */
 async function updateGameState(chprId, gameState) {
@@ -88,7 +88,7 @@ async function updateGameState(chprId, gameState) {
                 updated_at: new Date().toISOString()
             })
             .eq('CHPR_id', chprId)
-            .select('id')
+            .select('CHPR_id')
             .single();
 
         if (updateError) {
@@ -102,7 +102,7 @@ async function updateGameState(chprId, gameState) {
         return {
             success: true,
             message: 'Игровое состояние успешно обновлено.',
-            updatedId: updatedData.id
+            updatedId: updatedData.CHPR_id
         };
 
     } catch (error) {
