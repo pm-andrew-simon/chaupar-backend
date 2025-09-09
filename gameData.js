@@ -5,9 +5,10 @@ const { supabase } = require('./supabase');
 
 /**
  * Обновляет игровое состояние в таблице saved_games
- * @param {string} chprId - Уникальный идентификатор CHPR_ID для поиска записи
+ * @param {string} chprId - Уникальный идентификатор CHPR_id для поиска записи
  * @param {Object} gameState - JSON объект с состоянием игры
  * @returns {Promise<Object>} Объект с результатом выполнения операции
+ * @description Обновляет поля new_game_state и updated_at в таблице saved_games
  */
 async function updateGameState(chprId, gameState) {
     try {
@@ -79,10 +80,13 @@ async function updateGameState(chprId, gameState) {
             };
         }
 
-        // Обновляем поле new_game_state
+        // Обновляем поле new_game_state и updated_at
         const { data: updatedData, error: updateError } = await supabase
             .from('saved_games')
-            .update({ new_game_state: gameState })
+            .update({ 
+                new_game_state: gameState,
+                updated_at: new Date().toISOString()
+            })
             .eq('CHPR_id', chprId)
             .select('id')
             .single();
