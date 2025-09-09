@@ -18,8 +18,15 @@ app.use(express.json());
 // 5. Настраиваем CORS - разрешаем запросы с других доменов (с вашего фронтенда)
 app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*'); // Разрешаем всем (*) или укажите конкретный URL фронтенда
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS'); // Разрешаем методы
     res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
-    next();
+    
+    // Отвечаем на preflight запросы
+    if (req.method === 'OPTIONS') {
+        res.sendStatus(200);
+    } else {
+        next();
+    }
 });
 
 // 6. Создаем маршруты (роуты) API
