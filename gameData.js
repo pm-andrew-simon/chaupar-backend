@@ -109,20 +109,18 @@ function compareGameStates(previousState, newState) {
     }
 
     // Дополнительно проверяем изменения в diceLog для более точного определения хода
-    if (newState.diceLog && previousState.diceLog) {
-        if (newState.diceLog.length > previousState.diceLog.length) {
-            const newEntries = newState.diceLog.slice(previousState.diceLog.length);
-            const latestEntry = newEntries[newEntries.length - 1];
-            if (latestEntry) {
-                differences.diceRolls = [{
-                    dice1: latestEntry.dice1,
-                    dice2: latestEntry.dice2,
-                    sum: latestEntry.sum,
-                    player: latestEntry.player,
-                    color: latestEntry.color
-                }];
-                differences.hasChanges = true;
-            }
+    if (newState.diceLog && newState.diceLog.length > 0) {
+        // Берем последнюю запись из diceLog независимо от предыдущего состояния
+        const latestEntry = newState.diceLog[newState.diceLog.length - 1];
+        if (latestEntry) {
+            differences.diceRolls = [{
+                dice1: latestEntry.dice1,
+                dice2: latestEntry.dice2,
+                sum: latestEntry.sum,
+                player: latestEntry.player,
+                color: latestEntry.color
+            }];
+            differences.hasChanges = true;
         }
     }
 
