@@ -110,8 +110,8 @@ function compareGameStates(previousState, newState) {
 
     // Дополнительно проверяем изменения в diceLog для более точного определения хода
     if (newState.diceLog && newState.diceLog.length > 0) {
-        // Берем последнюю запись из diceLog независимо от предыдущего состояния
-        const latestEntry = newState.diceLog[newState.diceLog.length - 1];
+        // Берем первую запись из diceLog как актуальную (она содержит последний ход)
+        const latestEntry = newState.diceLog[0];
         if (latestEntry) {
             differences.diceRolls = [{
                 dice1: latestEntry.dice1,
