@@ -13,8 +13,17 @@ const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY;
 
 // Проверяем, что все необходимые переменные окружения заданы
 if (!supabaseUrl || !supabaseKey) {
-    console.error('❌ Ошибка: Не заданы переменные окружения VITE_SUPABASE_URL или VITE_SUPABASE_ANON_KEY');
-    process.exit(1);
+    console.warn('⚠️  Переменные окружения VITE_SUPABASE_URL или VITE_SUPABASE_ANON_KEY не заданы. Supabase отключен.');
+    
+    // Экспортируем заглушки если Supabase недоступен
+    module.exports = {
+        supabase: null,
+        testConnection: async () => {
+            console.log('ℹ️  Supabase не настроен - подключение пропущено');
+            return false;
+        }
+    };
+    return;
 }
 
 // Создаем клиента Supabase
