@@ -529,6 +529,20 @@ function calculateDistance(from, to) {
 }
 
 /**
+ * Проверяет, была ли фишка съедена (возврат с поля в зону ожидания)
+ * @param {Object} movement - Объект с информацией о перемещении
+ * @returns {boolean} true, если фишка была съедена
+ */
+function isPieceCaptured(movement) {
+    const { player, from, to } = movement;
+    const fromZone = getZoneType(from, player);
+    const toZone = getZoneType(to, player);
+    
+    // Фишка съедена, если она перемещается с любого места (кроме зоны ожидания) в зону ожидания
+    return toZone.type === 'waiting' && fromZone.type !== 'waiting';
+}
+
+/**
  * Валидирует корректность хода фишки
  * @param {Object} movement - Объект с информацией о перемещении
  * @param {Array} diceRolls - Массив бросков кубиков
@@ -622,16 +636,23 @@ function generateMoveReport(differences, gameState = null) {
         const validationErrors = [];
         
         differences.pieceMovements.forEach(movement => {
-            // Валидируем ход
-            const validation = validateMovement(movement, differences.diceRolls);
-            
-            if (!validation.isValid) {
-                validationErrors.push(validation.errorMessage);
+            // Проверяем, была ли фишка съедена
+            if (isPieceCaptured(movement)) {
+                // Для съеденных фишек не проводим валидацию, только добавляем сообщение
+                const { pieceId, piece } = movement;
+                detailedMovements.push(`Фишка ${pieceId || (piece + 1)} была съедена`);
+            } else {
+                // Валидируем ход только для не съеденных фишек
+                const validation = validateMovement(movement, differences.diceRolls);
+                
+                if (!validation.isValid) {
+                    validationErrors.push(validation.errorMessage);
+                }
+                
+                // Добавляем описание хода
+                const movementDescription = analyzePieceMovement(movement, gameState, differences.diceRolls);
+                detailedMovements.push(movementDescription);
             }
-            
-            // Добавляем описание хода
-            const movementDescription = analyzePieceMovement(movement, gameState, differences.diceRolls);
-            detailedMovements.push(movementDescription);
         });
         
         // Если есть ошибки валидации, показываем их
@@ -783,5 +804,6 @@ module.exports = {
     calculateManhattanDistance,
     getTriggerCell,
     getSourceTriggerCell,
-    validateMovement
+    validateMovement,
+    isPieceCaptured
 };
