@@ -411,6 +411,18 @@ function analyzePieceMovement(movement, gameState, diceRolls) {
         }
     }
     
+    // Проверяем, является ли начальная позиция зоной ожидания
+    if (fromZone.type === 'waiting') {
+        const distance = calculateGamePathDistance(from, to, player);
+        return `${message} переместилась из зоны ожидания с ${from} на ${to} (${distance} ${distance === 1 ? 'ход' : distance < 5 ? 'хода' : 'ходов'})`;
+    }
+    
+    // Проверяем, является ли начальная позиция стартовой позицией
+    if (fromZone.type === 'starting') {
+        const distance = calculateGamePathDistance(from, to, player);
+        return `${message} переместилась со стартовой позиции с ${from} на ${to} (${distance} ${distance === 1 ? 'ход' : distance < 5 ? 'хода' : 'ходов'})`;
+    }
+    
     // Обычное перемещение по полю
     const distance = calculateGamePathDistance(from, to, player);
     return `${message} переместилась с ${from} на ${to} (${distance} ${distance === 1 ? 'ход' : distance < 5 ? 'хода' : 'ходов'})`;
