@@ -432,12 +432,60 @@ function calculateGamePathDistance(from, to, player) {
         return calculateManhattanDistance(from, to);
     }
     
-    const fromIndex = playerPath.indexOf(from);
-    const toIndex = playerPath.indexOf(to);
+    // Проверяем специальные зоны для начальной позиции
+    let fromIndex = playerPath.indexOf(from);
+    let toIndex = playerPath.indexOf(to);
     
-    if (fromIndex === -1 || toIndex === -1) {
-        // Если одна из позиций не найдена в пути, используем манхэттенское расстояние
+    // Обработка перехода из зоны ожидания или стартовой зоны
+    if (fromIndex === -1) {
+        const fromZone = getZoneType(from, player);
+        
+        if (fromZone.type === 'waiting') {
+            // Из зоны ожидания через стартовую зону к началу игрового пути
+            // 1 единица на кубике: зона ожидания → стартовая позиция
+            // 1 ход: стартовая позиция → начало движения (I1)  
+            // Итого: fromIndex = -2 (чтобы добавить 2 хода к расчету)
+            fromIndex = -2;
+        } else if (fromZone.type === 'starting') {
+            // Из стартовой зоны на игровое поле требуется 1 ход
+            fromIndex = -1;
+        } else if (fromZone.type === 'prison' || fromZone.type === 'temple') {
+            // Для тюрьмы/храма ищем соответствующую триггерную клетку
+            const sourceTrigger = getSourceTriggerCell(from);
+            if (sourceTrigger) {
+                fromIndex = playerPath.indexOf(sourceTrigger.trigger);
+            }
+        }
+    }
+    
+    // Обработка перехода в специальные зоны для конечной позиции
+    if (toIndex === -1) {
+        const toZone = getZoneType(to, player);
+        
+        if (toZone.type === 'prison' || toZone.type === 'temple') {
+            // Для тюрьмы/храма ищем соответствующую триггерную клетку
+            const triggerData = getTriggerCell(to);
+            if (triggerData) {
+                toIndex = playerPath.indexOf(triggerData.trigger);
+            }
+        } else if (toZone.type === 'home') {
+            // Для дома ищем позицию в игровом пути
+            toIndex = playerPath.indexOf(to);
+        }
+    }
+    
+    // Если все еще не найдены позиции, используем манхэттенское расстояние
+    if ((fromIndex < -2 || (fromIndex === -1 && getZoneType(from, player).type === 'field')) || toIndex === -1) {
         return calculateManhattanDistance(from, to);
+    }
+    
+    // Специальная обработка для зон ожидания и стартовых зон
+    if (fromIndex === -2) {
+        // fromIndex = -2 означает переход из зоны ожидания (1 единица + 1 ход + путь до toIndex)
+        return 2 + toIndex;
+    } else if (fromIndex === -1) {
+        // fromIndex = -1 означает переход из стартовой зоны (1 ход + путь до toIndex)
+        return 1 + toIndex;
     }
     
     return Math.abs(toIndex - fromIndex);
