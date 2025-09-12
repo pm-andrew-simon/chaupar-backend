@@ -210,9 +210,8 @@ function isPositionInRange(position, from, to) {
 function areSubsequentHomeCellsOccupied(gameState, player, currentPosition) {
     if (!gameState.piecesData) return false;
     
-    const playerKey = player.toString();
     const homeZone = gameZones.homeZones[`player${player}`];
-    if (!homeZone) return false;
+    if (!homeZone || !homeZone.coordinates) return false;
     
     // Получаем все позиции всех игроков
     const allPositions = [];
@@ -226,54 +225,17 @@ function areSubsequentHomeCellsOccupied(gameState, player, currentPosition) {
         }
     }
     
-    // Генерируем последовательность клеток дома от текущей позиции до конца
-    const subsequentCells = getSubsequentHomeCells(currentPosition, homeZone);
+    // Находим индекс текущей позиции в домашней зоне
+    const currentIndex = homeZone.coordinates.indexOf(currentPosition);
+    if (currentIndex === -1) return false;
+    
+    // Получаем все последующие клетки от текущей позиции до конца домашней зоны
+    const subsequentCells = homeZone.coordinates.slice(currentIndex + 1);
     
     // Проверяем, заняты ли все последующие клетки
-    return subsequentCells.every(cell => allPositions.includes(cell));
+    return subsequentCells.length > 0 && subsequentCells.every(cell => allPositions.includes(cell));
 }
 
-/**
- * Получает последующие клетки в доме от текущей позиции
- * @param {string} currentPosition - Текущая позиция
- * @param {Object} homeZone - Объект домашней зоны с from и to
- * @returns {Array} Массив последующих позиций
- */
-function getSubsequentHomeCells(currentPosition, homeZone) {
-    const cells = [];
-    const currentCol = currentPosition.charAt(0);
-    const currentRow = parseInt(currentPosition.slice(1));
-    const fromCol = homeZone.from.charAt(0);
-    const fromRow = parseInt(homeZone.from.slice(1));
-    const toCol = homeZone.to.charAt(0);
-    const toRow = parseInt(homeZone.to.slice(1));
-    
-    // Определяем направление движения в доме
-    if (fromCol === toCol) {
-        // Вертикальное движение
-        const step = fromRow < toRow ? 1 : -1;
-        const targetRow = fromRow < toRow ? toRow : fromRow;
-        
-        for (let row = currentRow + step; row !== targetRow + step; row += step) {
-            if ((step > 0 && row <= toRow) || (step < 0 && row >= toRow)) {
-                cells.push(`${currentCol}${row}`);
-            }
-        }
-    } else if (fromRow === toRow) {
-        // Горизонтальное движение
-        const step = fromCol < toCol ? 1 : -1;
-        const targetCol = fromCol < toCol ? toCol : fromCol;
-        
-        for (let colCode = currentCol.charCodeAt(0) + step; 
-             (step > 0 && colCode <= targetCol.charCodeAt(0)) || 
-             (step < 0 && colCode >= targetCol.charCodeAt(0)); 
-             colCode += step) {
-            cells.push(`${String.fromCharCode(colCode)}${currentRow}`);
-        }
-    }
-    
-    return cells;
-}
 
 /**
  * Получает триггерную клетку для тюрьмы или храма
