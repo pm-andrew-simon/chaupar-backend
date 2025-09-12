@@ -2,6 +2,7 @@
 // Модуль для работы с данными игр в Supabase
 
 const { supabase } = require('./supabase');
+const gameZones = require('./gameZones.json');
 
 /**
  * Получает предыдущее игровое состояние из базы данных
@@ -134,6 +135,210 @@ function compareGameStates(previousState, newState) {
 }
 
 /**
+ * Определяет к какой зоне принадлежит позиция
+ * @param {string} position - Позиция на доске (например, "K1")
+ * @param {number} player - Номер игрока (1-4)
+ * @returns {Object} Объект с типом зоны и дополнительной информацией
+ */
+function getZoneType(position, player) {
+    const playerKey = `player${player}`;
+    
+    // Проверка зоны ожидания
+    const waitingZone = gameZones.waitingZones[playerKey];
+    if (waitingZone && isPositionInRange(position, waitingZone.from, waitingZone.to)) {
+        return { type: 'waiting', zone: 'waitingZone' };
+    }
+    
+    // Проверка стартовых позиций
+    const startingPos = gameZones.startingPositions[playerKey];
+    if (startingPos && isPositionInRange(position, startingPos.from, startingPos.to)) {
+        return { type: 'starting', zone: 'startingPosition' };
+    }
+    
+    // Проверка домашней зоны
+    const homeZone = gameZones.homeZones[playerKey];
+    if (homeZone && isPositionInRange(position, homeZone.from, homeZone.to)) {
+        return { type: 'home', zone: 'homeZone' };
+    }
+    
+    // Проверка тюрьмы
+    const prisonCells = Object.values(gameZones.specialZones.prison).map(p => p.teleportTo);
+    if (prisonCells.includes(position)) {
+        return { type: 'prison', zone: 'prison' };
+    }
+    
+    // Проверка храма
+    const templeCells = Object.values(gameZones.specialZones.temple).map(t => t.teleportTo);
+    if (templeCells.includes(position)) {
+        return { type: 'temple', zone: 'temple' };
+    }
+    
+    // Позиция начала движения
+    const movementStart = gameZones.movementStart[playerKey];
+    if (movementStart && position === movementStart.position) {
+        return { type: 'movementStart', zone: 'movementStart' };
+    }
+    
+    return { type: 'field', zone: 'gameField' };
+}
+
+/**
+ * Проверяет, находится ли позиция в диапазоне
+ * @param {string} position - Позиция для проверки
+ * @param {string} from - Начальная позиция диапазона
+ * @param {string} to - Конечная позиция диапазона
+ * @returns {boolean} true если позиция в диапазоне
+ */
+function isPositionInRange(position, from, to) {
+    const posCol = position.charAt(0);
+    const posRow = parseInt(position.slice(1));
+    const fromCol = from.charAt(0);
+    const fromRow = parseInt(from.slice(1));
+    const toCol = to.charAt(0);
+    const toRow = parseInt(to.slice(1));
+    
+    return posCol >= fromCol && posCol <= toCol && posRow >= fromRow && posRow <= toRow;
+}
+
+/**
+ * Проверяет занятость последующих клеток в доме
+ * @param {Object} gameState - Текущее состояние игры
+ * @param {number} player - Номер игрока
+ * @param {string} currentPosition - Текущая позиция фишки в доме
+ * @returns {boolean} true если все последующие клетки заняты
+ */
+function areSubsequentHomeCellsOccupied(gameState, player, currentPosition) {
+    if (!gameState.piecesData) return false;
+    
+    const playerKey = player.toString();
+    const homeZone = gameZones.homeZones[`player${player}`];
+    if (!homeZone) return false;
+    
+    // Получаем все позиции всех игроков
+    const allPositions = [];
+    for (const pKey in gameState.piecesData) {
+        if (gameState.piecesData[pKey] && Array.isArray(gameState.piecesData[pKey])) {
+            gameState.piecesData[pKey].forEach(piece => {
+                if (piece.position) {
+                    allPositions.push(piece.position);
+                }
+            });
+        }
+    }
+    
+    // Генерируем последовательность клеток дома от текущей позиции до конца
+    const subsequentCells = getSubsequentHomeCells(currentPosition, homeZone);
+    
+    // Проверяем, заняты ли все последующие клетки
+    return subsequentCells.every(cell => allPositions.includes(cell));
+}
+
+/**
+ * Получает последующие клетки в доме от текущей позиции
+ * @param {string} currentPosition - Текущая позиция
+ * @param {Object} homeZone - Объект домашней зоны с from и to
+ * @returns {Array} Массив последующих позиций
+ */
+function getSubsequentHomeCells(currentPosition, homeZone) {
+    const cells = [];
+    const currentCol = currentPosition.charAt(0);
+    const currentRow = parseInt(currentPosition.slice(1));
+    const fromCol = homeZone.from.charAt(0);
+    const fromRow = parseInt(homeZone.from.slice(1));
+    const toCol = homeZone.to.charAt(0);
+    const toRow = parseInt(homeZone.to.slice(1));
+    
+    // Определяем направление движения в доме
+    if (fromCol === toCol) {
+        // Вертикальное движение
+        const step = fromRow < toRow ? 1 : -1;
+        const targetRow = fromRow < toRow ? toRow : fromRow;
+        
+        for (let row = currentRow + step; row !== targetRow + step; row += step) {
+            if ((step > 0 && row <= toRow) || (step < 0 && row >= toRow)) {
+                cells.push(`${currentCol}${row}`);
+            }
+        }
+    } else if (fromRow === toRow) {
+        // Горизонтальное движение
+        const step = fromCol < toCol ? 1 : -1;
+        const targetCol = fromCol < toCol ? toCol : fromCol;
+        
+        for (let colCode = currentCol.charCodeAt(0) + step; 
+             (step > 0 && colCode <= targetCol.charCodeAt(0)) || 
+             (step < 0 && colCode >= targetCol.charCodeAt(0)); 
+             colCode += step) {
+            cells.push(`${String.fromCharCode(colCode)}${currentRow}`);
+        }
+    }
+    
+    return cells;
+}
+
+/**
+ * Анализирует конкретное перемещение фишки и генерирует детальное сообщение
+ * @param {Object} movement - Объект с информацией о перемещении
+ * @param {Object} gameState - Текущее состояние игры
+ * @param {Array} diceRolls - Массив бросков кубиков
+ * @returns {string} Детальное сообщение о перемещении
+ */
+function analyzePieceMovement(movement, gameState, diceRolls) {
+    const { player, piece, pieceId, from, to } = movement;
+    const fromZone = getZoneType(from, player);
+    const toZone = getZoneType(to, player);
+    
+    let message = `Фишка ${pieceId || (piece + 1)}`;
+    
+    // Анализируем различные типы перемещений
+    if (fromZone.type === 'waiting' && toZone.type === 'starting') {
+        return `${message} вышла из зоны ожидания`;
+    }
+    
+    if (fromZone.type === 'starting' && toZone.type !== 'starting') {
+        const diceSum = diceRolls.length > 0 ? (diceRolls[0].dice1 + diceRolls[0].dice2) : 0;
+        return `${message} вышла со стартовой позиции на поле на ${diceSum} ходов`;
+    }
+    
+    if (fromZone.type === 'prison') {
+        const diceSum = diceRolls.length > 0 ? (diceRolls[0].dice1 + diceRolls[0].dice2) : 0;
+        const remainingMoves = Math.max(0, diceSum - 6);
+        let prisonMessage = `${message} вышла из тюрьмы на 6`;
+        if (remainingMoves > 0) {
+            prisonMessage += ` плюс ${remainingMoves} ходов`;
+        }
+        return prisonMessage;
+    }
+    
+    if (toZone.type === 'home') {
+        const allSubsequentOccupied = areSubsequentHomeCellsOccupied(gameState, player, to);
+        if (allSubsequentOccupied) {
+            return `${message} зашла в дом`;
+        } else {
+            return `${message} спряталась в доме`;
+        }
+    }
+    
+    // Обычное перемещение по полю
+    const distance = calculateDistance(from, to);
+    return `${message} переместилась с ${from} на ${to} (${distance} ${distance === 1 ? 'ход' : distance < 5 ? 'хода' : 'ходов'})`;
+}
+
+/**
+ * Вычисляет расстояние между двумя позициями
+ * @param {string} from - Начальная позиция
+ * @param {string} to - Конечная позиция
+ * @returns {number} Расстояние в ходах
+ */
+function calculateDistance(from, to) {
+    const fromCol = from.charAt(0).charCodeAt(0);
+    const fromRow = parseInt(from.slice(1));
+    const toCol = to.charAt(0).charCodeAt(0);
+    const toRow = parseInt(to.slice(1));
+    
+    return Math.abs(fromCol - toCol) + Math.abs(fromRow - toRow);
+}
+
+/**
  * Генерирует детальный отчет о ходе игрока
  * @param {Object} differences - Объект с различиями между состояниями
  * @param {Object} gameState - Текущее состояние игры для получения информации об игроках
@@ -183,13 +388,17 @@ function generateMoveReport(differences, gameState = null) {
         report += `${playerColor} сделал ход`;
     }
 
-    // Добавляем информацию о перемещениях фишек
+    // Добавляем информацию о перемещениях фишек с детальным анализом
     if (differences.pieceMovements.length > 0) {
-        const movements = differences.pieceMovements.map(movement => {
-            return `фишкой ${movement.pieceId || (movement.piece + 1)} с ${movement.from} на ${movement.to}`;
-        }).join(', ');
+        const detailedMovements = differences.pieceMovements.map(movement => {
+            return analyzePieceMovement(movement, gameState, differences.diceRolls);
+        });
         
-        report += `, и сделал ходы: ${movements}`;
+        if (detailedMovements.length === 1) {
+            report += `. ${detailedMovements[0]}`;
+        } else {
+            report += `. Выполнены следующие ходы: ${detailedMovements.join('; ')}`;
+        }
     }
 
     return report;
@@ -320,5 +529,8 @@ module.exports = {
     updateGameState,
     getPreviousGameState,
     compareGameStates,
-    generateMoveReport
+    generateMoveReport,
+    getZoneType,
+    analyzePieceMovement,
+    calculateDistance
 };

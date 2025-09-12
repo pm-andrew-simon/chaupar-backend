@@ -1,0 +1,148 @@
+{
+  "waitingZones": {
+    "player1": {
+      "from": "M1",
+      "to": "O2",
+      "description": "Зона ожидания первого игрока"
+    },
+    "player2": {
+      "from": "A14",
+      "to": "C15",
+      "description": "Зона ожидания второго игрока"
+    },
+    "player3": {
+      "from": "N13",
+      "to": "O15",
+      "description": "Зона ожидания третьего игрока"
+    },
+    "player4": {
+      "from": "A1",
+      "to": "B3",
+      "description": "Зона ожидания четвертого игрока"
+    }
+  },
+  "startingPositions": {
+    "player1": {
+      "from": "K1",
+      "to": "K4",
+      "description": "Стартовые позиции первого игрока"
+    },
+    "player2": {
+      "from": "E12",
+      "to": "E15",
+      "description": "Стартовые позиции второго игрока"
+    },
+    "player3": {
+      "from": "L11",
+      "to": "O11",
+      "description": "Стартовые позиции третьего игрока"
+    },
+    "player4": {
+      "from": "A5",
+      "to": "D5",
+      "description": "Стартовые позиции четвертого игрока"
+    }
+  },
+  "movementStart": {
+    "player1": {
+      "position": "I1",
+      "description": "Начальная позиция движения первого игрока"
+    },
+    "player2": {
+      "position": "G15",
+      "description": "Начальная позиция движения второго игрока"
+    },
+    "player3": {
+      "position": "O9",
+      "description": "Начальная позиция движения третьего игрока"
+    },
+    "player4": {
+      "position": "A7",
+      "description": "Начальная позиция движения четвертого игрока"
+    }
+  },
+  "homeZones": {
+    "player1": {
+      "from": "H6",
+      "to": "H1",
+      "description": "Домашняя зона первого игрока"
+    },
+    "player2": {
+      "from": "H10",
+      "to": "H15",
+      "description": "Домашняя зона второго игрока"
+    },
+    "player3": {
+      "from": "J8",
+      "to": "O8",
+      "description": "Домашняя зона третьего игрока"
+    },
+    "player4": {
+      "from": "G8",
+      "to": "A8",
+      "description": "Домашняя зона четвертого игрока"
+    }
+  },
+  "teleportZones": {
+    "player1": {
+      "position": "I7",
+      "description": "Телепорт первого игрока"
+    },
+    "player2": {
+      "position": "G9",
+      "description": "Телепорт второго игрока"
+    },
+    "player3": {
+      "position": "I9",
+      "description": "Телепорт третьего игрока"
+    },
+    "player4": {
+      "position": "G7",
+      "description": "Телепорт четвертого игрока"
+    }
+  },
+  "specialZones": {
+    "prison": {
+      "G2": {
+        "teleportTo": "F2",
+        "description": "При попадании на G2 фишка автоматически попадает в тюрьму F2"
+      },
+      "N7": {
+        "teleportTo": "N6",
+        "description": "При попадании на N7 фишка автоматически попадает в тюрьму N6"
+      },
+      "I14": {
+        "teleportTo": "J14",
+        "description": "При попадании на I14 фишка автоматически попадает в тюрьму J14"
+      },
+      "B9": {
+        "teleportTo": "B10",
+        "description": "При попадании на B9 фишка автоматически попадает в тюрьму B10"
+      }
+    },
+    "temple": {
+      "G5": {
+        "teleportTo": "F5",
+        "description": "При попадании на G5 фишка автоматически попадает в храм F5"
+      },
+      "K7": {
+        "teleportTo": "K6",
+        "description": "При попадании на K7 фишка автоматически попадает в храм K6"
+      },
+      "I11": {
+        "teleportTo": "J11",
+        "description": "При попадании на I11 фишка автоматически попадает в храм J11"
+      },
+      "E9": {
+        "teleportTo": "E10",
+        "description": "При попадании на E9 фишка автоматически попадает в храм E10"
+      }
+    }
+  },
+  "metadata": {
+    "boardSize": "15x15",
+    "coordinateSystem": "A-O (columns) x 1-15 (rows)",
+    "description": "Игровая доска Чаупар с координатами специальных зон и путей для каждого игрока",
+    "lastUpdated": "2025-09-12"
+  }
+}
