@@ -537,15 +537,23 @@ function calculateDistance(from, to) {
 function validateMovement(movement, diceRolls) {
     const { player, piece, pieceId, from, to } = movement;
     
-    // Получаем сумму кубиков
-    const diceSum = diceRolls.length > 0 ? (diceRolls[0].dice1 + diceRolls[0].dice2) : 0;
-    const diceValues = diceRolls.length > 0 ? `${diceRolls[0].dice1}+${diceRolls[0].dice2}=${diceSum}` : 'N/A';
+    if (diceRolls.length === 0) {
+        return { isValid: true, errorMessage: null };
+    }
+    
+    const dice1 = diceRolls[0].dice1;
+    const dice2 = diceRolls[0].dice2;
+    const diceSum = dice1 + dice2;
+    const diceValues = `${dice1}+${dice2}=${diceSum}`;
     
     // Вычисляем фактическое расстояние хода
     const actualSteps = calculateGamePathDistance(from, to, player);
     
+    // Игрок может ходить как суммой кубиков, так и каждым кубиком отдельно
+    const validSteps = [dice1, dice2, diceSum];
+    
     // Проверяем соответствие
-    if (actualSteps !== diceSum) {
+    if (!validSteps.includes(actualSteps)) {
         return {
             isValid: false,
             errorMessage: `Некорректная длина хода фишки ${pieceId || (piece + 1)}. Выпало: ${diceValues}, перемещено: ${actualSteps}`
