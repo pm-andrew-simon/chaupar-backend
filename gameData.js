@@ -529,6 +529,36 @@ function calculateDistance(from, to) {
 }
 
 /**
+ * Валидирует корректность хода фишки
+ * @param {Object} movement - Объект с информацией о перемещении
+ * @param {Array} diceRolls - Массив бросков кубиков
+ * @returns {Object} Объект с результатом валидации {isValid, errorMessage}
+ */
+function validateMovement(movement, diceRolls) {
+    const { player, piece, pieceId, from, to } = movement;
+    
+    // Получаем сумму кубиков
+    const diceSum = diceRolls.length > 0 ? (diceRolls[0].dice1 + diceRolls[0].dice2) : 0;
+    const diceValues = diceRolls.length > 0 ? `${diceRolls[0].dice1}+${diceRolls[0].dice2}=${diceSum}` : 'N/A';
+    
+    // Вычисляем фактическое расстояние хода
+    const actualSteps = calculateGamePathDistance(from, to, player);
+    
+    // Проверяем соответствие
+    if (actualSteps !== diceSum) {
+        return {
+            isValid: false,
+            errorMessage: `Некорректная длина хода фишки ${pieceId || (piece + 1)}. Выпало: ${diceValues}, перемещено: ${actualSteps}`
+        };
+    }
+    
+    return {
+        isValid: true,
+        errorMessage: null
+    };
+}
+
+/**
  * Генерирует детальный отчет о ходе игрока
  * @param {Object} differences - Объект с различиями между состояниями
  * @param {Object} gameState - Текущее состояние игры для получения информации об игроках
@@ -578,16 +608,34 @@ function generateMoveReport(differences, gameState = null) {
         report += `${playerColor} сделал ход`;
     }
 
-    // Добавляем информацию о перемещениях фишек с детальным анализом
+    // Добавляем информацию о перемещениях фишек с детальным анализом и валидацией
     if (differences.pieceMovements.length > 0) {
-        const detailedMovements = differences.pieceMovements.map(movement => {
-            return analyzePieceMovement(movement, gameState, differences.diceRolls);
+        const detailedMovements = [];
+        const validationErrors = [];
+        
+        differences.pieceMovements.forEach(movement => {
+            // Валидируем ход
+            const validation = validateMovement(movement, differences.diceRolls);
+            
+            if (!validation.isValid) {
+                validationErrors.push(validation.errorMessage);
+            }
+            
+            // Добавляем описание хода
+            const movementDescription = analyzePieceMovement(movement, gameState, differences.diceRolls);
+            detailedMovements.push(movementDescription);
         });
         
-        if (detailedMovements.length === 1) {
-            report += `. ${detailedMovements[0]}`;
+        // Если есть ошибки валидации, показываем их
+        if (validationErrors.length > 0) {
+            report += `. ОШИБКА ВАЛИДАЦИИ: ${validationErrors.join('; ')}`;
         } else {
-            report += `. Выполнены следующие ходы: ${detailedMovements.join('; ')}`;
+            // Если валидация прошла успешно, показываем детали ходов
+            if (detailedMovements.length === 1) {
+                report += `. ${detailedMovements[0]}`;
+            } else {
+                report += `. Выполнены следующие ходы: ${detailedMovements.join('; ')}`;
+            }
         }
     }
 
@@ -726,5 +774,6 @@ module.exports = {
     calculateGamePathDistance,
     calculateManhattanDistance,
     getTriggerCell,
-    getSourceTriggerCell
+    getSourceTriggerCell,
+    validateMovement
 };
