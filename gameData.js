@@ -354,7 +354,7 @@ function analyzePieceMovement(movement, gameState, diceRolls) {
             const remainingMoves = diceSum - 6;
             if (remainingMoves > 0) {
                 // Вычисляем расстояние от триггерной клетки до конечной позиции
-                const distance = calculateDistance(sourceTrigger.trigger, to);
+                const distance = calculateGamePathDistance(sourceTrigger.trigger, to, player);
                 return `${message} вышла из тюрьмы на 6 и переместилась с ${sourceTrigger.trigger} на ${to} (${distance} ${distance === 1 ? 'ход' : distance < 5 ? 'хода' : 'ходов'})`;
             } else {
                 return `${message} вышла из тюрьмы на 6`;
@@ -368,10 +368,10 @@ function analyzePieceMovement(movement, gameState, diceRolls) {
     if (fromZone.type === 'temple') {
         const sourceTrigger = getSourceTriggerCell(from);
         if (sourceTrigger) {
-            const distance = calculateDistance(sourceTrigger.trigger, to);
+            const distance = calculateGamePathDistance(sourceTrigger.trigger, to, player);
             return `${message} вышла из храма и переместилась с ${sourceTrigger.trigger} на ${to} (${distance} ${distance === 1 ? 'ход' : distance < 5 ? 'хода' : 'ходов'})`;
         } else {
-            const distance = calculateDistance(from, to);
+            const distance = calculateGamePathDistance(from, to, player);
             return `${message} вышла из храма на ${to} (${distance} ${distance === 1 ? 'ход' : distance < 5 ? 'хода' : 'ходов'})`;
         }
     }
@@ -380,11 +380,11 @@ function analyzePieceMovement(movement, gameState, diceRolls) {
     if (toZone.type === 'prison') {
         const triggerData = getTriggerCell(to);
         if (triggerData) {
-            const distance = calculateDistance(from, triggerData.trigger);
+            const distance = calculateGamePathDistance(from, triggerData.trigger, player);
             return `${message} переместилась с ${from} в тюрьму ${to} (${distance} ${distance === 1 ? 'ход' : distance < 5 ? 'хода' : 'ходов'})`;
         } else {
             // Резервный вариант если триггер не найден
-            const distance = calculateDistance(from, to);
+            const distance = calculateGamePathDistance(from, to, player);
             return `${message} попала в тюрьму на ${to} (${distance} ${distance === 1 ? 'ход' : distance < 5 ? 'хода' : 'ходов'})`;
         }
     }
@@ -393,11 +393,11 @@ function analyzePieceMovement(movement, gameState, diceRolls) {
     if (toZone.type === 'temple') {
         const triggerData = getTriggerCell(to);
         if (triggerData) {
-            const distance = calculateDistance(from, triggerData.trigger);
+            const distance = calculateGamePathDistance(from, triggerData.trigger, player);
             return `${message} переместилась с ${from} в храм ${to} (${distance} ${distance === 1 ? 'ход' : distance < 5 ? 'хода' : 'ходов'})`;
         } else {
             // Резервный вариант если триггер не найден
-            const distance = calculateDistance(from, to);
+            const distance = calculateGamePathDistance(from, to, player);
             return `${message} попала в храм на ${to} (${distance} ${distance === 1 ? 'ход' : distance < 5 ? 'хода' : 'ходов'})`;
         }
     }
@@ -412,23 +412,60 @@ function analyzePieceMovement(movement, gameState, diceRolls) {
     }
     
     // Обычное перемещение по полю
-    const distance = calculateDistance(from, to);
+    const distance = calculateGamePathDistance(from, to, player);
     return `${message} переместилась с ${from} на ${to} (${distance} ${distance === 1 ? 'ход' : distance < 5 ? 'хода' : 'ходов'})`;
 }
 
 /**
- * Вычисляет расстояние между двумя позициями
+ * Вычисляет расстояние между двумя позициями по игровому пути
+ * @param {string} from - Начальная позиция
+ * @param {string} to - Конечная позиция  
+ * @param {number} player - Номер игрока (1-4) для определения пути
+ * @returns {number} Расстояние в ходах по игровому маршруту
+ */
+function calculateGamePathDistance(from, to, player) {
+    const playerKey = `player${player}`;
+    const playerPath = gameZones.playerPaths && gameZones.playerPaths[playerKey] && gameZones.playerPaths[playerKey].path;
+    
+    if (!playerPath) {
+        // Fallback к манхэттенскому расстоянию если путь не найден
+        return calculateManhattanDistance(from, to);
+    }
+    
+    const fromIndex = playerPath.indexOf(from);
+    const toIndex = playerPath.indexOf(to);
+    
+    if (fromIndex === -1 || toIndex === -1) {
+        // Если одна из позиций не найдена в пути, используем манхэттенское расстояние
+        return calculateManhattanDistance(from, to);
+    }
+    
+    return Math.abs(toIndex - fromIndex);
+}
+
+/**
+ * Вычисляет манхэттенское расстояние между двумя позициями (резервная функция)
  * @param {string} from - Начальная позиция
  * @param {string} to - Конечная позиция
- * @returns {number} Расстояние в ходах
+ * @returns {number} Манхэттенское расстояние в ходах
  */
-function calculateDistance(from, to) {
+function calculateManhattanDistance(from, to) {
     const fromCol = from.charAt(0).charCodeAt(0);
     const fromRow = parseInt(from.slice(1));
     const toCol = to.charAt(0).charCodeAt(0);
     const toRow = parseInt(to.slice(1));
     
     return Math.abs(fromCol - toCol) + Math.abs(fromRow - toRow);
+}
+
+/**
+ * Вычисляет расстояние между двумя позициями (совместимость с существующим кодом)
+ * @param {string} from - Начальная позиция
+ * @param {string} to - Конечная позиция
+ * @returns {number} Расстояние в ходах
+ */
+function calculateDistance(from, to) {
+    return calculateManhattanDistance(from, to);
 }
 
 /**
@@ -626,6 +663,8 @@ module.exports = {
     getZoneType,
     analyzePieceMovement,
     calculateDistance,
+    calculateGamePathDistance,
+    calculateManhattanDistance,
     getTriggerCell,
     getSourceTriggerCell
 };
