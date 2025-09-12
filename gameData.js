@@ -276,6 +276,52 @@ function getSubsequentHomeCells(currentPosition, homeZone) {
 }
 
 /**
+ * Получает триггерную клетку для тюрьмы или храма
+ * @param {string} targetPosition - Конечная позиция (тюрьма/храм)
+ * @returns {Object|null} Объект с типом и триггерной позицией или null
+ */
+function getTriggerCell(targetPosition) {
+    // Поиск в тюрьмах
+    for (const [triggerCell, data] of Object.entries(gameZones.specialZones.prison)) {
+        if (data.teleportTo === targetPosition) {
+            return { type: 'prison', trigger: triggerCell, target: targetPosition };
+        }
+    }
+    
+    // Поиск в храмах
+    for (const [triggerCell, data] of Object.entries(gameZones.specialZones.temple)) {
+        if (data.teleportTo === targetPosition) {
+            return { type: 'temple', trigger: triggerCell, target: targetPosition };
+        }
+    }
+    
+    return null;
+}
+
+/**
+ * Получает исходную триггерную клетку для выхода из тюрьмы или храма
+ * @param {string} currentPosition - Текущая позиция (тюрьма/храм)
+ * @returns {Object|null} Объект с типом и триггерной позицией или null
+ */
+function getSourceTriggerCell(currentPosition) {
+    // Поиск в тюрьмах
+    for (const [triggerCell, data] of Object.entries(gameZones.specialZones.prison)) {
+        if (data.teleportTo === currentPosition) {
+            return { type: 'prison', trigger: triggerCell, source: currentPosition };
+        }
+    }
+    
+    // Поиск в храмах
+    for (const [triggerCell, data] of Object.entries(gameZones.specialZones.temple)) {
+        if (data.teleportTo === currentPosition) {
+            return { type: 'temple', trigger: triggerCell, source: currentPosition };
+        }
+    }
+    
+    return null;
+}
+
+/**
  * Анализирует конкретное перемещение фишки и генерирует детальное сообщение
  * @param {Object} movement - Объект с информацией о перемещении
  * @param {Object} gameState - Текущее состояние игры
@@ -299,14 +345,61 @@ function analyzePieceMovement(movement, gameState, diceRolls) {
         return `${message} вышла со стартовой позиции на поле на ${diceSum} ходов`;
     }
     
+    // Обработка выхода из тюрьмы с особой механикой
     if (fromZone.type === 'prison') {
         const diceSum = diceRolls.length > 0 ? (diceRolls[0].dice1 + diceRolls[0].dice2) : 0;
-        const remainingMoves = Math.max(0, diceSum - 6);
-        let prisonMessage = `${message} вышла из тюрьмы на 6`;
-        if (remainingMoves > 0) {
-            prisonMessage += ` плюс ${remainingMoves} ходов`;
+        const sourceTrigger = getSourceTriggerCell(from);
+        
+        if (sourceTrigger && diceSum >= 6) {
+            const remainingMoves = diceSum - 6;
+            if (remainingMoves > 0) {
+                // Вычисляем расстояние от триггерной клетки до конечной позиции
+                const distance = calculateDistance(sourceTrigger.trigger, to);
+                return `${message} вышла из тюрьмы на 6 и переместилась с ${sourceTrigger.trigger} на ${to} (${distance} ${distance === 1 ? 'ход' : distance < 5 ? 'хода' : 'ходов'})`;
+            } else {
+                return `${message} вышла из тюрьмы на 6`;
+            }
+        } else {
+            return `${message} вышла из тюрьмы`;
         }
-        return prisonMessage;
+    }
+    
+    // Обработка выхода из храма
+    if (fromZone.type === 'temple') {
+        const sourceTrigger = getSourceTriggerCell(from);
+        if (sourceTrigger) {
+            const distance = calculateDistance(sourceTrigger.trigger, to);
+            return `${message} вышла из храма и переместилась с ${sourceTrigger.trigger} на ${to} (${distance} ${distance === 1 ? 'ход' : distance < 5 ? 'хода' : 'ходов'})`;
+        } else {
+            const distance = calculateDistance(from, to);
+            return `${message} вышла из храма на ${to} (${distance} ${distance === 1 ? 'ход' : distance < 5 ? 'хода' : 'ходов'})`;
+        }
+    }
+    
+    // Обработка входа в тюрьму через триггерную клетку
+    if (toZone.type === 'prison') {
+        const triggerData = getTriggerCell(to);
+        if (triggerData) {
+            const distance = calculateDistance(from, triggerData.trigger);
+            return `${message} переместилась с ${from} в тюрьму ${to} (${distance} ${distance === 1 ? 'ход' : distance < 5 ? 'хода' : 'ходов'})`;
+        } else {
+            // Резервный вариант если триггер не найден
+            const distance = calculateDistance(from, to);
+            return `${message} попала в тюрьму на ${to} (${distance} ${distance === 1 ? 'ход' : distance < 5 ? 'хода' : 'ходов'})`;
+        }
+    }
+    
+    // Обработка входа в храм через триггерную клетку
+    if (toZone.type === 'temple') {
+        const triggerData = getTriggerCell(to);
+        if (triggerData) {
+            const distance = calculateDistance(from, triggerData.trigger);
+            return `${message} переместилась с ${from} в храм ${to} (${distance} ${distance === 1 ? 'ход' : distance < 5 ? 'хода' : 'ходов'})`;
+        } else {
+            // Резервный вариант если триггер не найден
+            const distance = calculateDistance(from, to);
+            return `${message} попала в храм на ${to} (${distance} ${distance === 1 ? 'ход' : distance < 5 ? 'хода' : 'ходов'})`;
+        }
     }
     
     if (toZone.type === 'home') {
@@ -532,5 +625,7 @@ module.exports = {
     generateMoveReport,
     getZoneType,
     analyzePieceMovement,
-    calculateDistance
+    calculateDistance,
+    getTriggerCell,
+    getSourceTriggerCell
 };
