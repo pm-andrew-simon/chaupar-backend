@@ -145,19 +145,19 @@ function getZoneType(position, player) {
     
     // Проверка зоны ожидания
     const waitingZone = gameZones.waitingZones[playerKey];
-    if (waitingZone && isPositionInRange(position, waitingZone.from, waitingZone.to)) {
+    if (waitingZone && waitingZone.coordinates && waitingZone.coordinates.includes(position)) {
         return { type: 'waiting', zone: 'waitingZone' };
     }
     
     // Проверка стартовых позиций
     const startingPos = gameZones.startingPositions[playerKey];
-    if (startingPos && isPositionInRange(position, startingPos.from, startingPos.to)) {
+    if (startingPos && startingPos.coordinates && startingPos.coordinates.includes(position)) {
         return { type: 'starting', zone: 'startingPosition' };
     }
     
     // Проверка домашней зоны
     const homeZone = gameZones.homeZones[playerKey];
-    if (homeZone && isPositionInRange(position, homeZone.from, homeZone.to)) {
+    if (homeZone && homeZone.coordinates && homeZone.coordinates.includes(position)) {
         return { type: 'home', zone: 'homeZone' };
     }
     

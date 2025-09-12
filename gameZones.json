@@ -1,46 +1,38 @@
 {
   "waitingZones": {
     "player1": {
-      "from": "M1",
-      "to": "O2",
-      "description": "Зона ожидания первого игрока"
+      "coordinates": ["M1", "N1", "O1", "M2", "N2", "O2"],
+      "description": "Зона ожидания первого игрока (M1:O2)"
     },
     "player2": {
-      "from": "A14",
-      "to": "C15",
-      "description": "Зона ожидания второго игрока"
+      "coordinates": ["A14", "B14", "C14", "A15", "B15", "C15"],
+      "description": "Зона ожидания второго игрока (A14:C15)"
     },
     "player3": {
-      "from": "N13",
-      "to": "O15",
-      "description": "Зона ожидания третьего игрока"
+      "coordinates": ["N13", "O13", "N14", "O14", "N15", "O15"],
+      "description": "Зона ожидания третьего игрока (N13:O15)"
     },
     "player4": {
-      "from": "A1",
-      "to": "B3",
-      "description": "Зона ожидания четвертого игрока"
+      "coordinates": ["A1", "B1", "A2", "B2", "A3", "B3"],
+      "description": "Зона ожидания четвертого игрока (A1:B3)"
     }
   },
   "startingPositions": {
     "player1": {
-      "from": "K1",
-      "to": "K4",
-      "description": "Стартовые позиции первого игрока"
+      "coordinates": ["K1", "K2", "K3", "K4"],
+      "description": "Стартовые позиции первого игрока (K1:K4)"
     },
     "player2": {
-      "from": "E12",
-      "to": "E15",
-      "description": "Стартовые позиции второго игрока"
+      "coordinates": ["E12", "E13", "E14", "E15"],
+      "description": "Стартовые позиции второго игрока (E12:E15)"
     },
     "player3": {
-      "from": "L11",
-      "to": "O11",
-      "description": "Стартовые позиции третьего игрока"
+      "coordinates": ["L11", "M11", "N11", "O11"],
+      "description": "Стартовые позиции третьего игрока (L11:O11)"
     },
     "player4": {
-      "from": "A5",
-      "to": "D5",
-      "description": "Стартовые позиции четвертого игрока"
+      "coordinates": ["A5", "B5", "C5", "D5"],
+      "description": "Стартовые позиции четвертого игрока (A5:D5)"
     }
   },
   "movementStart": {
@@ -63,24 +55,20 @@
   },
   "homeZones": {
     "player1": {
-      "from": "H6",
-      "to": "H1",
-      "description": "Домашняя зона первого игрока"
+      "coordinates": ["H6", "H5", "H4", "H3", "H2", "H1"],
+      "description": "Домашняя зона первого игрока (H6:H1)"
     },
     "player2": {
-      "from": "H10",
-      "to": "H15",
-      "description": "Домашняя зона второго игрока"
+      "coordinates": ["H10", "H11", "H12", "H13", "H14", "H15"],
+      "description": "Домашняя зона второго игрока (H10:H15)"
     },
     "player3": {
-      "from": "J8",
-      "to": "O8",
-      "description": "Домашняя зона третьего игрока"
+      "coordinates": ["J8", "K8", "L8", "M8", "N8", "O8"],
+      "description": "Домашняя зона третьего игрока (J8:O8)"
     },
     "player4": {
-      "from": "G8",
-      "to": "A8",
-      "description": "Домашняя зона четвертого игрока"
+      "coordinates": ["G8", "F8", "E8", "D8", "C8", "B8", "A8"],
+      "description": "Домашняя зона четвертого игрока (G8:A8)"
     }
   },
   "teleportZones": {
