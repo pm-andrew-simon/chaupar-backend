@@ -413,14 +413,23 @@ function calculateGamePathDistance(from, to, player) {
     // Обработка перехода из зоны ожидания или стартовой зоны
     if (fromIndex === -1) {
         const fromZone = getZoneType(from, player);
-        
+        const toZone = getZoneType(to, player);
+
         if (fromZone.type === 'waiting') {
+            // Перемещение из зоны ожидания в стартовую зону - всегда 1 ход
+            if (toZone.type === 'starting') {
+                return 1;
+            }
             // Из зоны ожидания через стартовую зону к началу игрового пути
-            // 1 единица на кубике: зона ожидания → стартовая позиция
-            // 1 ход: стартовая позиция → начало движения (I1)  
+            // 1 ход: зона ожидания → стартовая позиция
+            // 1 ход: стартовая позиция → начало движения (I1)
             // Итого: fromIndex = -2 (чтобы добавить 2 хода к расчету)
             fromIndex = -2;
         } else if (fromZone.type === 'starting') {
+            // Перемещение внутри стартовой зоны - 0 ходов
+            if (toZone.type === 'starting') {
+                return 0;
+            }
             // Из стартовой зоны на игровое поле требуется 1 ход
             fromIndex = -1;
         } else if (fromZone.type === 'prison' || fromZone.type === 'temple') {
