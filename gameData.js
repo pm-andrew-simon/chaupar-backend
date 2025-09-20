@@ -303,8 +303,8 @@ function analyzePieceMovement(movement, gameState, diceRolls) {
     }
     
     if (fromZone.type === 'starting' && toZone.type !== 'starting') {
-        const diceSum = diceRolls.length > 0 ? (diceRolls[0].dice1 + diceRolls[0].dice2) : 0;
-        return `${message} вышла со стартовой позиции на поле на ${diceSum} ходов`;
+        const distance = calculateGamePathDistance(from, to, player);
+        return `${message} вышла со стартовой позиции на поле на ${distance} ${distance === 1 ? 'ход' : distance < 5 ? 'хода' : 'ходов'}`;
     }
     
     // Обработка выхода из тюрьмы с особой механикой
@@ -747,7 +747,7 @@ async function updateGameState(chprId, gameState) {
 
         return {
             success: true,
-            message: 'Игровое состояние успешно обновлено.',
+            message: 'Игра обновлена!',
             updatedId: updatedData.CHPR_id,
             moveReport: moveReport
         };
